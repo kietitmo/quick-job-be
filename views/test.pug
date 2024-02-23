@@ -1,0 +1,13 @@
+extends ./main.pug
+
+block content
+    main
+        #contact.inf-block
+            div
+                ul#messages
+            div
+                input#message(type='text', spellcheck='false')
+                button#button_send_mess(onclick='send()') Send
+    script(src='https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js')
+    script
+        include js/chat.js

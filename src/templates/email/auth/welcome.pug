@@ -1,0 +1,39 @@
+//- html
+//-   head
+//-     title Welcome #{name} to Quick-job!
+//-   body
+//-     h1 Welcome #{name} to Quick-job!
+//-     p Hi there,
+
+//-     p This is your ativation code: 
+//-     h2 #{token}
+
+//-     p If you didn't request this, please ignore it.
+
+//-     p Thanks,
+//-     p The Quick-job Team
+
+html
+  head
+    title Email Verification
+  body
+    h1 Welcome #{name} to Quick-job! 
+    h2 Email Verification
+
+    p Hi there,
+
+    p Please verify your email by clicking the link below:
+
+    //- Generate verification link
+
+    - const verificationLink = `${process.env.baseUrl}${process.env.verifyEmailRoute}?email=${email}&emailToken=${token}`
+
+    //- Render the link
+    a(href=verificationLink) Click here to verify your email
+
+    p If you didn't request this, please ignore this email.
+
+    p Thanks,
+    p The Quick-job Team
+
+
