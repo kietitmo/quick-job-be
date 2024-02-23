@@ -4,4 +4,4 @@ Backend:
 Nestjs + TypeORM
 
 DB schema
-![db_schema](/quick_job/DB_Schema.jpg)
+![db_schema](/DB_Schema.jpg)
