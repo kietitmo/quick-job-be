@@ -76,7 +76,7 @@ export class AuthService {
       const token = randomBytes.toString('hex').slice(0, 6);
 
       const emailVerification = this.emailVerificationRepository.create({
-        email: user.email,
+        user: user,
         emailToken: token,
       });
 
@@ -106,7 +106,6 @@ export class AuthService {
     try {
       const emailVerification = await this.emailVerificationRepository.findOne({
         where: {
-          email: emailVerificationDto.email,
           emailToken: emailVerificationDto.emailToken,
         },
       });
@@ -127,7 +126,7 @@ export class AuthService {
       await this.emailVerificationRepository.remove(emailVerification);
 
       this.mailerService.sendMail({
-        to: emailVerification.email,
+        to: user.email,
         from: process.env.MAIL_FROM,
         subject: 'Verification successful in Quick Job ✔',
         template: './auth/emailVerified',
@@ -205,7 +204,7 @@ export class AuthService {
       const token = randomBytes.toString('hex').slice(0, 6);
 
       const forgottenPassword = this.forgottenPasswordRepository.create({
-        email: email,
+        user: user,
         token: token,
         reason: reason,
       });
@@ -254,7 +253,6 @@ export class AuthService {
     try {
       const changingPassword = await this.forgottenPasswordRepository.findOne({
         where: {
-          email: resetPassword.email,
           token: resetPassword.newPasswordToken,
         },
       });
