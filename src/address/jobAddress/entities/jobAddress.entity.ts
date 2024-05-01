@@ -34,7 +34,7 @@ export class JobAddress {
   @Column({ type: 'varchar', length: 255, nullable: true })
   houseNumber: string;
 
-  @OneToOne(() => Job)
+  @OneToOne(() => Job, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'job_id' })
   job: Job;
 }

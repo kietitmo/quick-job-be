@@ -1,4 +1,9 @@
-import { ExecutionContext, Injectable } from '@nestjs/common';
+import {
+  ExecutionContext,
+  HttpException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import { IS_PUBLIC_KEY } from '../decorators/IsPublic.decorator';
@@ -14,9 +19,23 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       context.getHandler(),
       context.getClass(),
     ]);
+
     if (isPublic) {
       return true;
     }
+
     return super.canActivate(context);
+  }
+
+  handleRequest(err, user, info) {
+    if (err || !user) {
+      // Kiểm tra nếu thông tin lỗi bao gồm mã lỗi 'TokenExpiredError'
+      if (info && info.name === 'TokenExpiredError') {
+        throw new HttpException('Token expired', 419);
+      }
+      // Nếu không phải lỗi hết hạn token, hoặc không có user, ném ra UnauthorizedException
+      throw new UnauthorizedException();
+    }
+    return user;
   }
 }

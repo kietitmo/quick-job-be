@@ -13,6 +13,8 @@ import { JobVideo } from './job_video.entity';
 import { JobCategory } from '../enums/JobCategory.enum';
 import { JobStatus } from '../enums/JobStatus.enum';
 import { JobAddress } from '../../address/jobAddress/entities/jobAddress.entity';
+import { Application } from 'src/applications/entities/application.entity';
+// import { JobMedia } from './job_media.entity';
 
 @Entity('jobs')
 export class Job {
@@ -66,6 +68,11 @@ export class Job {
   })
   videos: JobVideo[];
 
+  // @OneToMany(() => JobMedia, (media) => media.job, {
+  //   onDelete: 'CASCADE',
+  // })
+  // media: JobMedia[];
+
   @Column({ nullable: true })
   rating: number;
 
@@ -75,4 +82,9 @@ export class Job {
     default: JobStatus.Searching,
   })
   status: JobStatus;
+
+  @OneToMany(() => Application, (application) => application.job, {
+    onDelete: 'CASCADE',
+  })
+  applications: Application[];
 }

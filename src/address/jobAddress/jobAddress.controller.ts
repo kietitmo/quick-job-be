@@ -28,9 +28,17 @@ export class JobAddressController {
   @Public()
   @Get('districts/:province_code')
   async getDistricts(@Param('province_code') province_code: string) {
-    const provinces =
+    const districts =
       await this.addressService.getDistrictsByProvinceCode(province_code);
-    return provinces;
+    return districts;
+  }
+
+  @Public()
+  @Get('wards/:district_code')
+  async getWards(@Param('district_code') district_code: string) {
+    const wards =
+      await this.addressService.getWardsByDistrictCode(district_code);
+    return wards;
   }
 
   @Public()

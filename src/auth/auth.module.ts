@@ -7,38 +7,53 @@ import { EmailVerification } from './entities/emailVerification.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { APP_GUARD } from '@nestjs/core';
-import { RoleGuard } from './guards/role.guard';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { ChangingPassword } from './entities/changingPassword.entity';
 import { PassportModule } from '@nestjs/passport';
 import { GoogleStrategy } from './strategies/google.strategy';
+import { Token } from './entities/token.entity';
+import { TokenService } from './token.service';
+import { MailerModule } from '@nestjs-modules/mailer';
+import { PugAdapter } from '@nestjs-modules/mailer/dist/adapters/pug.adapter';
 
 @Module({
   imports: [
     UsersModule,
     JwtModule.register({
       global: true,
-      signOptions: { expiresIn: '60s' },
     }),
-    TypeOrmModule.forFeature([EmailVerification, ChangingPassword]),
+    TypeOrmModule.forFeature([EmailVerification, ChangingPassword, Token]),
     PassportModule.register({ session: true }),
+    MailerModule.forRootAsync({
+      useFactory: () => ({
+        transport: {
+          host: process.env.MAIL_HOST,
+          secure: false,
+          auth: {
+            user: process.env.MAIL_USER,
+            pass: process.env.MAIL_PASSWORD,
+          },
+        },
+        defaults: {
+          from: `"No Reply" <${process.env.MAIL_FROM}>`,
+        },
+        template: {
+          dir: 'src/templates/email',
+          adapter: new PugAdapter(),
+          options: {
+            strict: true,
+          },
+        },
+      }),
+    }),
   ],
   controllers: [AuthController],
   providers: [
     AuthService,
+    TokenService,
     JwtService,
     LocalStrategy,
     JwtStrategy,
     GoogleStrategy,
-    {
-      provide: APP_GUARD,
-      useClass: JwtAuthGuard,
-    },
-    {
-      provide: APP_GUARD,
-      useClass: RoleGuard,
-    },
   ],
 })
 export class AuthModule {}

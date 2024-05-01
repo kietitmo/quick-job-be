@@ -157,6 +157,10 @@ export class ApplicationsService {
         application.job = job;
       }
 
+      if (updateData.status) {
+        application.status = updateData.status;
+      }
+
       return await this.applicationsRepository.save(application);
     } catch (error) {
       console.error(`Error updating application: ${error.message}`);

@@ -10,6 +10,6 @@ import { JobsModule } from 'src/jobs/jobs.module';
   imports: [TypeOrmModule.forFeature([Application]), UsersModule, JobsModule],
   controllers: [ApplicationsController],
   providers: [ApplicationsService],
-  exports: [TypeOrmModule],
+  exports: [TypeOrmModule, ApplicationsService],
 })
 export class ApplicationsModule {}

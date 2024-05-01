@@ -24,12 +24,9 @@ html
 
     p Please verify your email by clicking the link below:
 
-    //- Generate verification link
-
-    - const verificationLink = `${process.env.baseUrl}${process.env.verifyEmailRoute}?email=${email}&emailToken=${token}`
-
     //- Render the link
-    a(href=verificationLink) Click here to verify your email
+    h2 Your verification token is:
+    h1 #{token}
 
     p If you didn't request this, please ignore this email.
 

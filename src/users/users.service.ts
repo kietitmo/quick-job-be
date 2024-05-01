@@ -167,10 +167,6 @@ export class UsersService {
         user.avatarUrl = updateUserDto.avatarUrl;
       }
 
-      if (updateUserDto.refreshToken) {
-        user.refreshToken = updateUserDto.refreshToken;
-      }
-
       if (updateUserDto.isVerified) {
         user.isVerified = updateUserDto.isVerified;
       }

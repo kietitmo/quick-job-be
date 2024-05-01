@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
 import { Review } from './review.entity';
 import { ReviewMediaType } from '../enum/review-media-type.enum';
 
-@Entity('review-media')
+@Entity('review_media')
 export class ReviewMedia {
   @PrimaryGeneratedColumn('uuid')
   id: string;

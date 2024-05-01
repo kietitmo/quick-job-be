@@ -14,6 +14,7 @@ import { Unit } from 'src/address/vietnamAdress/entities/unit.entity';
 import { Ward } from 'src/address/vietnamAdress/entities/ward.entity';
 import { JobAddress } from 'src/address/jobAddress/entities/jobAddress.entity';
 import { UsersModule } from 'src/users/users.module';
+import { JobMedia } from './entities/job_media.entity';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { UsersModule } from 'src/users/users.module';
       Job,
       JobImage,
       JobVideo,
+      JobMedia,
       Province,
       District,
       Ward,
@@ -28,20 +30,8 @@ import { UsersModule } from 'src/users/users.module';
       Region,
       JobAddress,
     ]),
-    JobAddressModule,
     AddressVietnamModule,
-    // TypeOrmModule.forRoot({
-    //   name: 'vietnamese_administrative_units',
-    //   type: 'postgres',
-    //   host: process.env.DBA_HOST,
-    //   port: +process.env.DBA_PORT,
-    //   username: "postgres",
-    //   password: "123456",
-    //   database: process.env.DBA_NAME,
-    //   entities: [Province, District, Ward, Unit, Region],
-    //   // autoLoadEntities: true,
-    //   synchronize: true,
-    // }),
+    JobAddressModule,
     UsersModule,
   ],
   controllers: [JobsController],

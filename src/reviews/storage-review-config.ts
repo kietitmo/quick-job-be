@@ -47,7 +47,7 @@ const getFileType = (file: Express.Multer.File) => {
 };
 
 const getDestinationFolder = (type: string) => {
-  const folderPath = `./uploads/review/${type}s`;
+  const folderPath = `./public/uploads/review/${type}s`;
 
   if (!fs.existsSync(folderPath)) {
     fs.mkdirSync(folderPath, { recursive: true });

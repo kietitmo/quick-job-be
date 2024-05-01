@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { Review } from './entities/review.entity';
 import { UpdateReviewDto } from './dto/update-review.dto';
-import { ReviewMedia } from './entities/review-media.entity';
+import { ReviewMedia } from './entities/reviewMedia.entity';
 import { PageOptionsDto } from 'src/pagnition/page-option.dto';
 import { PageDto } from 'src/pagnition/page.dto';
 import { SearchingReviewConditionDto } from './dto/searching-review-condition.dto';
@@ -35,7 +35,7 @@ export class ReviewsService {
         files.forEach(async (file) => {
           if (file.mimetype.startsWith('image')) {
             const reviewMedia = new ReviewMedia();
-            reviewMedia.url = file.destination + '/' + file.filename;
+            reviewMedia.url = '/uploads/review/images/' + file.filename;
             reviewMedia.review = newReview;
             reviewMedia.mediaType = ReviewMediaType.IMAGE;
             await this.reviewsMediaRepository.save(reviewMedia);
@@ -43,7 +43,7 @@ export class ReviewsService {
 
           if (file.mimetype.startsWith('video')) {
             const reviewMedia = new ReviewMedia();
-            reviewMedia.url = file.destination + '/' + file.filename;
+            reviewMedia.url = '/uploads/review/videos/' + file.filename;
             reviewMedia.review = newReview;
             reviewMedia.mediaType = ReviewMediaType.VIDEO;
             await this.reviewsMediaRepository.save(reviewMedia);
@@ -65,6 +65,12 @@ export class ReviewsService {
 
       if (reviewee) {
         newReview.reviewee = reviewee;
+      }
+
+      const job = await this.jobService.findOne(createReviewDto.jobId);
+
+      if (job) {
+        newReview.job = job;
       }
 
       return await this.reviewsRepository.save(newReview);
@@ -221,7 +227,7 @@ export class ReviewsService {
         files.forEach(async (file) => {
           if (file.mimetype.startsWith('image')) {
             const reviewMedia = new ReviewMedia();
-            reviewMedia.url = file.destination + '/' + file.filename;
+            reviewMedia.url = '/uploads/review/images/' + file.filename;
             reviewMedia.review = review;
             reviewMedia.mediaType = ReviewMediaType.IMAGE;
             await this.reviewsMediaRepository.save(reviewMedia);
@@ -229,7 +235,7 @@ export class ReviewsService {
 
           if (file.mimetype.startsWith('video')) {
             const reviewMedia = new ReviewMedia();
-            reviewMedia.url = file.destination + '/' + file.filename;
+            reviewMedia.url = '/uploads/review/videos/' + file.filename;
             reviewMedia.review = review;
             reviewMedia.mediaType = ReviewMediaType.VIDEO;
             await this.reviewsMediaRepository.save(reviewMedia);

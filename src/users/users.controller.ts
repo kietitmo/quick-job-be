@@ -10,6 +10,7 @@ import {
   UseInterceptors,
   Req,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -20,6 +21,10 @@ import { SearchingUserConditionDto } from './dto/searching-user-condition.dto';
 import { PageOptionsDto } from 'src/pagnition/page-option.dto';
 import { PageDto } from 'src/pagnition/page.dto';
 import { User } from './entities/user.entity';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { RoleGuard } from 'src/auth/guards/role.guard';
+import { Role } from 'src/auth/enums/role.enum';
+import { Roles } from 'src/auth/decorators/roles.decorator';
 
 @Controller('users')
 export class UsersController {
@@ -39,20 +44,25 @@ export class UsersController {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.updateUser(id, updateUserDto);
   }
 
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Roles(Role.admin)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post('upload-avatar')
   @UseInterceptors(FileInterceptor('avatar', CustomStorageUserAvatar()))
   async uploadFiles(
@@ -62,7 +72,7 @@ export class UsersController {
   ) {
     return this.usersService.uploadAvatar(
       req.user.id,
-      file.destination + '/' + file.filename,
+      '/uploads/user/avatars/' + file.filename,
     );
   }
 }

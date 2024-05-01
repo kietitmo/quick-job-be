@@ -1,3 +1,4 @@
+import { Application } from 'src/applications/entities/application.entity';
 import { Job } from 'src/jobs/entities/job.entity';
 import { User } from 'src/users/entities/user.entity';
 import {
@@ -5,11 +6,14 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToOne,
   PrimaryGeneratedColumn,
+  Unique,
 } from 'typeorm';
 
 @Entity()
-export class JobUser {
+@Unique(['job', 'executor'])
+export class JobExecutor {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -18,8 +22,12 @@ export class JobUser {
   job: Job;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'user_id' })
+  @JoinColumn({ name: 'executor_id' })
   executor: User;
+
+  @OneToOne(() => Application, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'application_id' })
+  application: Application;
 
   @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;

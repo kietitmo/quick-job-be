@@ -6,9 +6,11 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Unique,
 } from 'typeorm';
 import { ApplicationStatus } from '../enums/application-status.enum';
 
+@Unique(['job', 'applicant'])
 @Entity('applications')
 export class Application {
   @PrimaryGeneratedColumn('uuid')

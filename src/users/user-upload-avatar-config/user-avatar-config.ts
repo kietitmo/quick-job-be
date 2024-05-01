@@ -34,7 +34,7 @@ export const CustomStorageUserAvatar = () => {
 };
 
 const createDest = () => {
-  const folderPath = `./uploads/user/avatars`;
+  const folderPath = `./public/uploads/user/avatars`;
 
   if (!fs.existsSync(folderPath)) {
     fs.mkdirSync(folderPath, { recursive: true });

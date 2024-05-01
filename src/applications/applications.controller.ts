@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApplicationsService } from './applications.service';
 import { CreateApplicationDto } from './dto/create-application.dto';
@@ -15,11 +16,13 @@ import { PageOptionsDto } from 'src/pagnition/page-option.dto';
 import { PageDto } from 'src/pagnition/page.dto';
 import { SearchingApplicationConditionDto } from './dto/seaching-application-condition.dto';
 import { Application } from './entities/application.entity';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 @Controller('applications')
 export class ApplicationsController {
   constructor(private readonly applicationsService: ApplicationsService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Post()
   async create(@Body() createApplicationDto: CreateApplicationDto) {
     return await this.applicationsService.createApplication(
@@ -43,6 +46,7 @@ export class ApplicationsController {
     );
   }
 
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   async update(
     @Param('id') id: string,
@@ -54,6 +58,7 @@ export class ApplicationsController {
     );
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return await this.applicationsService.remove(id);

@@ -7,7 +7,7 @@ export class JobVideo {
   id: string;
 
   @Column()
-  videoUrl: string;
+  url: string;
 
   @ManyToOne(() => Job, (job) => job.videos)
   job: Job;

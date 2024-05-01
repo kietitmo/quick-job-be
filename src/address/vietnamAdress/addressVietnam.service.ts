@@ -100,7 +100,7 @@ export class AddressVietNamService {
     }
   }
 
-  async getWardsByProvinceCode(district_code: string): Promise<Ward[]> {
+  async getWardsByDistrictCode(district_code: string): Promise<Ward[]> {
     try {
       return this.wardRepository
         .createQueryBuilder('wards')

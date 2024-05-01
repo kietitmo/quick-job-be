@@ -9,6 +9,6 @@ import { AddressVietnamModule } from '../vietnamAdress/addressVietnam.module';
   imports: [TypeOrmModule.forFeature([JobAddress]), AddressVietnamModule],
   controllers: [JobAddressController],
   providers: [JobAddressService],
-  exports: [TypeOrmModule, JobAddressService],
+  exports: [TypeOrmModule],
 })
 export class JobAddressModule {}

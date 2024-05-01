@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
 import { Job } from './entities/job.entity';
@@ -13,21 +13,23 @@ import { PageDto } from 'src/pagnition/page.dto';
 import { PageMetaDto } from 'src/pagnition/page-meta.dto';
 import { SearchingJobConditionDto } from './dto/search-condition.dto';
 import { UsersService } from 'src/users/users.service';
+import { JobMedia } from './entities/job_media.entity';
+// import { JobMediaType } from './enums/job-media-type.enum';
 
 @Injectable()
 export class JobsService {
   constructor(
     @InjectRepository(Job)
     private readonly jobsRepository: Repository<Job>,
+    @InjectRepository(JobMedia)
+    private readonly jobMediaRepository: Repository<JobMedia>,
     @InjectRepository(JobImage)
     private readonly jobImageRepository: Repository<JobImage>,
     @InjectRepository(JobVideo)
     private readonly jobVideoRepository: Repository<JobVideo>,
     @InjectRepository(JobAddress)
     private readonly jobAddressRepository: Repository<JobAddress>,
-    @Inject(AddressVietNamService)
     private readonly vietnamAddressService: AddressVietNamService,
-    @Inject(UsersService)
     private readonly userService: UsersService,
   ) {}
 
@@ -36,6 +38,7 @@ export class JobsService {
     files?: Array<Express.Multer.File>,
   ): Promise<Job> {
     try {
+      console.log(1);
       const { creatorId, address, ...jobData } = createJobDto;
       const province = await this.vietnamAddressService.getProvince(
         address.province_code,
@@ -52,9 +55,7 @@ export class JobsService {
         street: address.street,
         houseNumber: address.houseNumber,
       });
-
       const savedJobAddress = await this.jobAddressRepository.save(jobAddress);
-
       const user = await this.userService.findOne(creatorId);
 
       const newJob = this.jobsRepository.create({
@@ -62,48 +63,36 @@ export class JobsService {
         address: savedJobAddress,
         creator: user,
       });
-
       const savedJob = await this.jobsRepository.save(newJob);
-
       savedJobAddress.job = savedJob;
       await this.jobAddressRepository.save(savedJobAddress);
-
       if (files) {
         files.forEach(async (file) => {
+          // const jobmedia = new JobMedia();
+          // jobmedia.job = savedJob;
+
           if (file.mimetype.startsWith('image')) {
             const jobImage = new JobImage();
-            jobImage.imageUrl = file.destination + '/' + file.filename;
+            jobImage.url = '/uploads/job/images/' + file.filename;
             jobImage.job = savedJob;
             await this.jobImageRepository.save(jobImage);
-          }
 
+            // jobmedia.mediaType = JobMediaType.IMAGE;
+            // jobmedia.url = '/uploads/job/images/' + file.filename;
+            // await this.jobMediaRepository.save(jobmedia);
+          }
           if (file.mimetype.startsWith('video')) {
             const jobVideo = new JobVideo();
-            jobVideo.videoUrl = file.destination + '/' + file.filename;
+            jobVideo.url = '/uploads/job/videos/' + file.filename;
             jobVideo.job = savedJob;
             await this.jobVideoRepository.save(jobVideo);
+
+            // jobmedia.mediaType = JobMediaType.IMAGE;
+            // jobmedia.url = '/uploads/job/videos/' + file.filename;
+            // await this.jobMediaRepository.save(jobmedia);
           }
         });
       }
-      // const jobImages = images.map((imageUrl) => {
-      //   const jobImage = new JobImage();
-      //   jobImage.imageUrl = imageUrl;
-      //   jobImage.job = savedJob;
-      //   return this.jobImageRepository.create(jobImage);
-      // });
-
-      // const savedJobImages = await this.jobImageRepository.save(jobImages);
-      // savedJob.images = savedJobImages;
-
-      // const jobVideos = videos.map((videoUrl) => {
-      //   const jobVideo = new JobVideo();
-      //   jobVideo.videoUrl = videoUrl;
-      //   jobVideo.job = savedJob;
-      //   return this.jobVideoRepository.create(jobVideo);
-      // });
-
-      // const savedJobVideos = await this.jobVideoRepository.save(jobVideos);
-      // savedJob.videos = savedJobVideos;
 
       return await this.jobsRepository.save(savedJob);
     } catch (error) {
@@ -123,9 +112,11 @@ export class JobsService {
         .skip((pageOptionsDto.page - 1) * pageOptionsDto.take || 0)
         .take(pageOptionsDto.take)
         .leftJoinAndSelect('job.address', 'address')
+        // .leftJoinAndSelect('job.media', 'media_media')
         .leftJoinAndSelect('job.images', 'image')
         .leftJoinAndSelect('job.videos', 'video')
         .leftJoinAndSelect('job.creator', 'creator')
+        .leftJoinAndSelect('job.applications', 'applications')
         .leftJoinAndSelect('address.province', 'province')
         .leftJoinAndSelect('address.district', 'district')
         .leftJoinAndSelect('address.ward', 'ward');
@@ -134,6 +125,12 @@ export class JobsService {
         if (conditions.creatorId) {
           queryBuilder.andWhere('creator.id = :creatorId', {
             creatorId: conditions.creatorId,
+          });
+        }
+
+        if (conditions.status) {
+          queryBuilder.andWhere('job.status = :status', {
+            status: conditions.status,
           });
         }
 
@@ -217,6 +214,7 @@ export class JobsService {
         .createQueryBuilder('job')
         .where('job.id = :id', { id: id })
         .leftJoinAndSelect('job.address', 'address')
+        // .leftJoinAndSelect('job.media', 'media_media')
         .leftJoinAndSelect('job.images', 'images')
         .leftJoinAndSelect('job.videos', 'videos')
         .leftJoinAndSelect('job.creator', 'creator')
@@ -287,21 +285,33 @@ export class JobsService {
       }
 
       if (files) {
-        files.forEach(async (file) => {
-          if (file.mimetype.startsWith('image')) {
-            const jobImage = new JobImage();
-            jobImage.imageUrl = file.destination + '/' + file.filename;
-            jobImage.job = job;
-            await this.jobImageRepository.save(jobImage);
-          }
+        if (files) {
+          files.forEach(async (file) => {
+            // const jobmedia = new JobMedia();
+            // jobmedia.job = job;
 
-          if (file.mimetype.startsWith('video')) {
-            const jobVideo = new JobVideo();
-            jobVideo.videoUrl = file.destination + '/' + file.filename;
-            jobVideo.job = job;
-            await this.jobVideoRepository.save(jobVideo);
-          }
-        });
+            if (file.mimetype.startsWith('image')) {
+              const jobImage = new JobImage();
+              jobImage.url = '/uploads/job/images/' + file.filename;
+              jobImage.job = job;
+              await this.jobImageRepository.save(jobImage);
+
+              // jobmedia.mediaType = JobMediaType.IMAGE;
+              // jobmedia.url = '/uploads/job/images/' + file.filename;
+              // await this.jobMediaRepository.save(jobmedia);
+            }
+            if (file.mimetype.startsWith('video')) {
+              const jobVideo = new JobVideo();
+              jobVideo.url = '/uploads/job/videos/' + file.filename;
+              jobVideo.job = job;
+              await this.jobVideoRepository.save(jobVideo);
+
+              // jobmedia.mediaType = JobMediaType.IMAGE;
+              // jobmedia.url = '/uploads/job/videos/' + file.filename;
+              // await this.jobMediaRepository.save(jobmedia);
+            }
+          });
+        }
       }
 
       const address = await this.jobAddressRepository
@@ -367,6 +377,7 @@ export class JobsService {
         .createQueryBuilder('job')
         .leftJoinAndSelect('job.address', 'address')
         .leftJoinAndSelect('job.images', 'images')
+        // .leftJoinAndSelect('job.media', 'media_media')
         .leftJoinAndSelect('job.videos', 'videos')
         .leftJoinAndSelect('job.creator', 'creator')
         .leftJoinAndSelect('address.province', 'province')
@@ -453,14 +464,14 @@ export class JobsService {
       files.forEach(async (file) => {
         if (file.mimetype.startsWith('image')) {
           const jobImage = new JobImage();
-          jobImage.imageUrl = file.destination + '/' + file.filename;
+          jobImage.url = file.destination + '/' + file.filename;
           jobImage.job = job;
           await this.jobImageRepository.save(jobImage);
         }
 
         if (file.mimetype.startsWith('video')) {
           const jobVideo = new JobVideo();
-          jobVideo.videoUrl = file.destination + '/' + file.filename;
+          jobVideo.url = file.destination + '/' + file.filename;
           jobVideo.job = job;
           await this.jobVideoRepository.save(jobVideo);
         }

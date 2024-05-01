@@ -1,6 +1,6 @@
 import { IsDateString, IsOptional, IsString } from 'class-validator';
 
-export class SearchingJobUserConditionDto {
+export class SearchingJobExecutorConditionDto {
   @IsOptional()
   @IsString()
   executorId: string;
@@ -8,6 +8,10 @@ export class SearchingJobUserConditionDto {
   @IsOptional()
   @IsString()
   jobId: string;
+
+  @IsOptional()
+  @IsString()
+  applicationId: string;
 
   @IsOptional()
   @IsDateString()

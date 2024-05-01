@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Req,
-  UseGuards,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Req, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Public } from './decorators/IsPublic.decorator';
 import { EmailVerificationDto } from './dto/emailVerification.dto';
@@ -15,6 +7,7 @@ import { ResetPassworDto } from './dto/resetPassword.dto';
 import { PasswordChangingReason } from './enums/PasswordChangingReason.enum';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -53,17 +46,19 @@ export class AuthController {
     return this.authService.refreshTokens(refreshToken.refreshToken);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('logout')
   async logout(@Req() req: any) {
-    await this.authService.logout(req.user.sub);
+    await this.authService.logout(req.user.id);
   }
 
-  @Get('verifyEmail')
+  @Post('verifyEmail')
   @Public()
-  async verifyEmail(@Query() emailVerificationDto: EmailVerificationDto) {
+  async verifyEmail(@Body() emailVerificationDto: EmailVerificationDto) {
     return await this.authService.verifyEmailCreateUser(emailVerificationDto);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('profile')
   async getProfile(@Req() req: any) {
     return await req.user;
@@ -71,7 +66,8 @@ export class AuthController {
 
   @Public()
   @Post('forgot-password')
-  async forgotPassword(@Query('email') email: string) {
+  async forgotPassword(@Body('email') email: string) {
+    console.log(email);
     return await this.authService.SendMailVerifyPassword(
       email,
       PasswordChangingReason.Forgot,
@@ -92,15 +88,8 @@ export class AuthController {
     );
   }
 
-  // @Post('sendmail')
-  // @Public()
-  // send() {
-  //   return this.authService.sendMail();
-  // }
-
-  // @Post('exception')
-  // @Public()
-  // async testExx() {
-  //   return await this.authService.throwEx();
-  // }
+  @Get('sendmailtest')
+  async mail() {
+    return this.authService.sendMail('email_test4@mailinator.com');
+  }
 }

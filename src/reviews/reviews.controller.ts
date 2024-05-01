@@ -9,6 +9,7 @@ import {
   Query,
   UploadedFiles,
   UseInterceptors,
+  UseGuards,
 } from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto } from './dto/create-review.dto';
@@ -20,11 +21,13 @@ import { PageOptionsDto } from 'src/pagnition/page-option.dto';
 import { PageDto } from 'src/pagnition/page.dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { CustomStorageReviewMedia } from './storage-review-config';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 @Controller('reviews')
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Post()
   @UseInterceptors(FilesInterceptor('files', null, CustomStorageReviewMedia))
   create(
@@ -49,6 +52,7 @@ export class ReviewsController {
     return await this.reviewsService.findOne(id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   @UseInterceptors(FilesInterceptor('files', null, CustomStorageReviewMedia))
   async update(
@@ -60,6 +64,7 @@ export class ReviewsController {
     return await this.reviewsService.updateReview(id, updateReviewDto, files);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return await this.reviewsService.removeReview(id);

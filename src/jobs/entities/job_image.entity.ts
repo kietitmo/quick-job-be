@@ -7,7 +7,7 @@ export class JobImage {
   id: string;
 
   @Column()
-  imageUrl: string;
+  url: string;
 
   @ManyToOne(() => Job, (job) => job.images)
   job: Job;

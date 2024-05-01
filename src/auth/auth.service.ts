@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
-import { SignInDto } from './dto/signIn.dto';
 import * as bcrypt from 'bcrypt';
 import { MailerService } from '@nestjs-modules/mailer';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -20,6 +19,9 @@ import { ChangingPassword } from './entities/changingPassword.entity';
 import { Profile } from 'passport-google-oauth20';
 import { UserCreator } from './enums/userCreator.enum';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { UpdateUserDto } from 'src/users/dto/update-user.dto';
+import { Token } from './entities/token.entity';
+import { TokenService } from './token.service';
 
 @Injectable()
 export class AuthService {
@@ -27,18 +29,23 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private mailerService: MailerService,
+    private tokenService: TokenService,
 
     @InjectRepository(EmailVerification)
     private emailVerificationRepository: Repository<EmailVerification>,
 
     @InjectRepository(ChangingPassword)
     private forgottenPasswordRepository: Repository<ChangingPassword>,
+
+    @InjectRepository(Token)
+    private tokenRepository: Repository<Token>,
   ) {}
 
   private async generateTokens(user: User) {
     const payload = {
       sub: user.id,
       username: user.username,
+      fullName: user.fullName,
       email: user.email,
       role: user.role,
     };
@@ -46,7 +53,7 @@ export class AuthService {
     try {
       const accessToken = await this.jwtService.signAsync(payload, {
         secret: process.env.JWT_SECRET_ACCESS_TOKEN,
-        expiresIn: '1h',
+        expiresIn: '300s',
       });
 
       const refreshToken = await this.jwtService.signAsync(payload, {
@@ -59,16 +66,12 @@ export class AuthService {
         refreshToken,
       };
     } catch (error) {
-      console.error('Token generation error:', error);
+      throw error;
     }
   }
 
   async signUp(createUserDto: CreateUserDto) {
     try {
-      const signInDto = new SignInDto();
-      signInDto.username = createUserDto.username;
-      signInDto.password = createUserDto.password;
-
       createUserDto.password = await bcrypt.hash(createUserDto.password, 10);
       const user = await this.usersService.createUser(createUserDto);
 
@@ -81,7 +84,7 @@ export class AuthService {
       });
 
       this.emailVerificationRepository.save(emailVerification);
-
+      console.log(1);
       this.mailerService.sendMail({
         to: createUserDto.email,
         from: process.env.MAIL_FROM,
@@ -93,12 +96,15 @@ export class AuthService {
           email: createUserDto.email,
         },
       });
-
+      console.log('send mail');
       await this.usersService.updateUser(user.id, {
         createdBy: UserCreator.local,
       });
+      await this.tokenService.createToken(user.id, '-');
+
+      return user;
     } catch (error) {
-      console.error('Sign-up error:', error);
+      throw error;
     }
   }
 
@@ -122,8 +128,12 @@ export class AuthService {
         throw new NotFoundException('User not found');
       }
 
-      await this.usersService.updateUser(user.id, { isVerified: true });
+      const updateUserDto = new UpdateUserDto();
+      updateUserDto.isVerified = true;
+      await this.usersService.updateUser(user.id, updateUserDto);
       await this.emailVerificationRepository.remove(emailVerification);
+
+      console.log('veryfied ' + user.email);
 
       this.mailerService.sendMail({
         to: user.email,
@@ -132,10 +142,7 @@ export class AuthService {
         template: './auth/emailVerified',
       });
 
-      const result = await this.login(user);
-      await this.updateRefreshToken(user.id, result.refreshToken);
-
-      return result;
+      return true;
     } catch (error) {
       console.error('Email verification error:', error);
       throw error;
@@ -147,6 +154,7 @@ export class AuthService {
       await this.usersService.updateUser(userId, {
         refreshToken: refreshToken,
       });
+      await this.tokenService.updateToken(userId, refreshToken);
     } catch (error) {
       console.error('Refresh token update error:', error);
       throw error;
@@ -155,9 +163,12 @@ export class AuthService {
 
   async logout(userId: string) {
     try {
-      return this.usersService.updateUser(userId, {
+      await this.tokenService.updateToken(userId, '-');
+      this.usersService.updateUser(userId, {
         refreshToken: '-',
       });
+
+      return;
     } catch (error) {
       console.error('Logout error:', error);
       throw error;
@@ -166,23 +177,26 @@ export class AuthService {
 
   async refreshTokens(refreshToken_: string) {
     try {
+      console.log('call refresh tokens');
       const verify = await this.jwtService.verifyAsync(refreshToken_, {
         secret: process.env.JWT_SECRET_REFRESH_TOKEN,
       });
+      console.log('verify refresh tokens ', verify);
 
       const user = await this.usersService.findOneByUsername(verify.username);
+      const token = await this.tokenService.findOneByUserId(user.id);
 
-      if (!user || user.refreshToken === '-') {
+      if (!user || token.refreshToken === '-') {
         throw new ForbiddenException('Access Denied');
       }
 
-      if (!(refreshToken_ === user.refreshToken)) {
+      if (refreshToken_ !== token.refreshToken) {
         throw new ForbiddenException('Access Denied');
       }
-
       const tokens = await this.generateTokens(user);
       await this.updateRefreshToken(user.id, tokens.refreshToken);
-
+      await this.tokenService.updateToken(user.id, tokens.refreshToken);
+      console.log(' done verify refresh tokens ');
       return {
         email: user.email,
         ...tokens,
@@ -258,7 +272,7 @@ export class AuthService {
       });
 
       if (!changingPassword) {
-        throw new NotFoundException('Email Verification not found');
+        throw new NotFoundException('WRONG TOKEN ENTERED');
       }
 
       if (
@@ -316,7 +330,7 @@ export class AuthService {
       const user = await this.usersService.findOneByUsername(username);
       if (user && (await bcrypt.compare(pass, user.password))) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { password, refreshToken, ...result } = user;
+        const { password, ...result } = user;
         return result;
       }
       return null;
@@ -326,12 +340,12 @@ export class AuthService {
     }
   }
 
-  async validateUserJwt(email: string): Promise<any> {
+  async validateUserJwt(sub: string): Promise<any> {
     try {
-      const user = await this.usersService.findOneByEmail(email);
+      const user = await this.usersService.findOne(sub);
       if (user) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { password, refreshToken, ...result } = user;
+        const { password, ...result } = user;
         return result;
       }
       return null;
@@ -348,7 +362,7 @@ export class AuthService {
       );
       if (user) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { password, refreshToken, ...result } = user;
+        const { password, ...result } = user;
         return result;
       } else {
         const new_user = await this.usersService.createUser({
@@ -364,7 +378,7 @@ export class AuthService {
         });
 
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { password, refreshToken, ...result } = new_user;
+        const { password, ...result } = new_user;
         return result;
       }
     } catch (error) {
@@ -376,25 +390,27 @@ export class AuthService {
   async login(user: any) {
     try {
       const tokens = await this.generateTokens(user);
-      await this.updateRefreshToken(user.id, tokens.refreshToken);
+      await this.tokenService.updateToken(user.id, tokens.refreshToken);
 
-      return tokens;
+      await this.updateRefreshToken(user.id, tokens.refreshToken);
+      const data = { user, tokens };
+      return data;
     } catch (error) {
       console.error('Login error:', error);
       throw error;
     }
   }
 
-  sendMail() {
+  sendMail(mail: string) {
     this.mailerService.sendMail({
-      to: 'mail1@mailinator.com',
+      to: 'email_test4@mailinator.com',
       from: process.env.MAIL_FROM,
       subject: 'Welcome to Quick Job ✔',
       template: './auth/welcome',
       context: {
         name: 'signUpDto.fullName',
         token: 'token',
-        email: 'mail1@mailinator.com',
+        email: mail,
       },
     });
   }

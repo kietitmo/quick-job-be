@@ -9,7 +9,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { ReviewType } from '../enum/review-type.enum';
-import { ReviewMedia } from './review-media.entity';
+import { ReviewMedia } from './reviewMedia.entity';
 
 @Entity('reviews')
 export class Review {

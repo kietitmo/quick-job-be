@@ -1,7 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateJobUserDto } from './dto/create-job-user.dto';
-import { UpdateJobUserDto } from './dto/update-job-user.dto';
-import { JobUser } from './entities/job-user.entity';
+import { JobExecutor } from './entities/job-executor.entity';
 import { UsersService } from 'src/users/users.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -10,29 +8,38 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { PageOptionsDto } from 'src/pagnition/page-option.dto';
 import { PageDto } from 'src/pagnition/page.dto';
 import { PageMetaDto } from 'src/pagnition/page-meta.dto';
-import { SearchingJobUserConditionDto } from './dto/job-user-searching-condition.dto';
+import { ApplicationsService } from 'src/applications/applications.service';
+import { SearchingJobExecutorConditionDto } from './dto/job-executor-searching-condition.dto';
+import { CreateJobExecutorDto } from './dto/create-job-executor.dto';
+import { UpdateJobExecutorDto } from './dto/update-job-executor.dto';
 
 @Injectable()
-export class JobUserService {
+export class JobExecutorService {
   constructor(
-    @InjectRepository(JobUser)
-    private readonly jobUserRepository: Repository<JobUser>,
+    @InjectRepository(JobExecutor)
+    private readonly jobExecutorRepository: Repository<JobExecutor>,
     private userService: UsersService,
     private jobService: JobsService,
+    private applicationService: ApplicationsService,
     private mailerService: MailerService,
   ) {}
 
-  async create(createJobUserDto: CreateJobUserDto) {
+  async create(createJobExecutorDto: CreateJobExecutorDto) {
     try {
-      const executor = await this.userService.findOne(createJobUserDto.userId);
-      const job = await this.jobService.findOne(createJobUserDto.jobId);
-
-      if (!executor && !job) {
-        throw new NotFoundException('User or job not found');
+      const executor = await this.userService.findOne(
+        createJobExecutorDto.executorId,
+      );
+      const job = await this.jobService.findOne(createJobExecutorDto.jobId);
+      const app = await this.applicationService.findOne(
+        createJobExecutorDto.applicationId,
+      );
+      if (!executor || !job || !app) {
+        throw new NotFoundException('executor or job or application not found');
       }
-      const jobUser = new JobUser();
-      jobUser.executor = executor;
-      jobUser.job = job;
+      const jobExecutor = new JobExecutor();
+      jobExecutor.executor = executor;
+      jobExecutor.job = job;
+      jobExecutor.application = app;
 
       this.mailerService.sendMail({
         to: executor.email,
@@ -46,7 +53,7 @@ export class JobUserService {
         },
       });
 
-      return await this.jobUserRepository.save(jobUser);
+      return await this.jobExecutorRepository.save(jobExecutor);
     } catch (error) {
       console.error('Create job user error:', error);
       throw new Error('Failed to create job user.');
@@ -55,19 +62,21 @@ export class JobUserService {
 
   async findAll(
     pageOptionsDto: PageOptionsDto,
-    conditions: SearchingJobUserConditionDto,
-  ): Promise<PageDto<JobUser>> {
+    conditions: SearchingJobExecutorConditionDto,
+  ): Promise<PageDto<JobExecutor>> {
     try {
-      const queryBuilder = this.jobUserRepository
+      const queryBuilder = this.jobExecutorRepository
         .createQueryBuilder('job_user')
         .leftJoinAndSelect('job_user.job', 'jobs')
-        .leftJoinAndSelect('job_user.executor', 'users')
+        .leftJoinAndSelect('jobs.creator', 'creator')
+        .leftJoinAndSelect('job_user.application', 'applications')
+        .leftJoinAndSelect('job_user.executor', 'executor')
         .orderBy('job_user.createdAt', pageOptionsDto.order)
         .skip((pageOptionsDto.page - 1) * pageOptionsDto.take || 0)
         .take(pageOptionsDto.take);
       if (conditions) {
         if (conditions.executorId) {
-          queryBuilder.andWhere('users.id = :executorId', {
+          queryBuilder.andWhere('executor.id = :executorId', {
             executorId: conditions.executorId,
           });
         }
@@ -75,6 +84,12 @@ export class JobUserService {
         if (conditions.jobId) {
           queryBuilder.andWhere('jobs.id = :jobId', {
             jobId: conditions.jobId,
+          });
+        }
+
+        if (conditions.applicationId) {
+          queryBuilder.andWhere('applications.id = :applicationId', {
+            applicationId: conditions.applicationId,
           });
         }
 
@@ -100,10 +115,12 @@ export class JobUserService {
 
   async findOne(id: string) {
     try {
-      return await this.jobUserRepository
+      return await this.jobExecutorRepository
         .createQueryBuilder('job_user')
         .leftJoinAndSelect('job_user.job', 'jobs')
-        .leftJoinAndSelect('job_user.executor', 'users')
+        .leftJoinAndSelect('jobs.creator', 'creator')
+        .leftJoinAndSelect('job_user.application', 'applications')
+        .leftJoinAndSelect('job_user.executor', 'executor')
         .where('job_user.id = :id', { id })
         .getOne();
     } catch (error) {
@@ -112,46 +129,53 @@ export class JobUserService {
     }
   }
 
-  async update(id: string, updateJobUserDto: UpdateJobUserDto) {
+  async update(id: string, updateJobExecutorDto: UpdateJobExecutorDto) {
     try {
-      const jobUser = await this.jobUserRepository
+      const jobExecutor = await this.jobExecutorRepository
         .createQueryBuilder('job_user')
         .where('job_user.id = :id', { id })
         .leftJoinAndSelect('job_user.job', 'jobs')
-        .leftJoinAndSelect('job_user.executor', 'users')
+        .leftJoinAndSelect('jobs.creator', 'creator')
+        .leftJoinAndSelect('job_user.application', 'applications')
+        .leftJoinAndSelect('job_user.executor', 'executor')
         .getOne();
 
-      if (!jobUser) {
+      if (!jobExecutor) {
         throw new NotFoundException('Job user not found');
       }
 
-      if (updateJobUserDto.jobId) {
-        const newJob = await this.jobService.findOne(updateJobUserDto.jobId);
-        jobUser.job = newJob;
-      }
-
-      if (updateJobUserDto.userId) {
-        const newExecutor = await this.userService.findOne(
-          updateJobUserDto.userId,
+      if (updateJobExecutorDto.jobId) {
+        const newJob = await this.jobService.findOne(
+          updateJobExecutorDto.jobId,
         );
-        jobUser.executor = newExecutor;
+        jobExecutor.job = newJob;
       }
 
-      await this.jobUserRepository.save(jobUser);
-      return jobUser;
+      if (updateJobExecutorDto.executorId) {
+        const newExecutor = await this.userService.findOne(
+          updateJobExecutorDto.executorId,
+        );
+        jobExecutor.executor = newExecutor;
+      }
+
+      if (updateJobExecutorDto.applicationId) {
+        const newApp = await this.applicationService.findOne(
+          updateJobExecutorDto.applicationId,
+        );
+        jobExecutor.application = newApp;
+      }
+
+      await this.jobExecutorRepository.save(jobExecutor);
+      return jobExecutor;
     } catch (error) {
       console.error('Update job user error:', error);
       throw new Error('Failed to update job user.');
     }
   }
 
-  async remove(id: string) {
+  async remove(id: string): Promise<void> {
     try {
-      const result = await this.jobUserRepository.delete(id);
-
-      if (result.affected === 0) {
-        throw new NotFoundException('Job user not found');
-      }
+      await this.jobExecutorRepository.delete(id);
     } catch (error) {
       console.error('Remove job user error:', error);
       throw new Error('Failed to remove job user.');

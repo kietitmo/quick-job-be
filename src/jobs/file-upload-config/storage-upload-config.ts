@@ -20,6 +20,7 @@ export const CustomStorageJobMedia = {
     const allowedMimeTypes = [
       'image/jpeg',
       'image/png',
+      'image/jpg',
       'video/mp4',
       'video/mpeg',
     ];
@@ -47,7 +48,7 @@ const getFileType = (file: Express.Multer.File) => {
 };
 
 const getDestinationFolder = (type: string) => {
-  const folderPath = `./uploads/job/${type}s`;
+  const folderPath = `./public/uploads/job/${type}s`;
 
   if (!fs.existsSync(folderPath)) {
     fs.mkdirSync(folderPath, { recursive: true });

@@ -8,7 +8,11 @@ import { MessagesService } from './messages.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { Server, Socket } from 'socket.io';
 
-@WebSocketGateway({ cors: '*:*' })
+@WebSocketGateway({
+  cors: {
+    origin: '*',
+  },
+})
 export class MessagesGateway {
   constructor(private readonly messagesService: MessagesService) {}
   @WebSocketServer()
@@ -17,18 +21,19 @@ export class MessagesGateway {
 
   handleConnection(client: Socket) {
     console.log(`Client connected: ${client.id}`);
-    const userId = client.handshake.query.userId.toString();
-    client.data = { userId };
+    console.log(client.handshake.query);
+    // const userId = client.handshake.query.userId.toString();
+    // client.data = { userId };
 
-    const privateRoom = `private-${userId}`;
-    client.join(privateRoom);
+    // const privateRoom = `private-${userId}`;
+    // client.join(privateRoom);
 
-    if (!this.privateRooms.has(userId)) {
-      this.privateRooms.set(userId, new Set<string>());
-    }
-    this.privateRooms.get(userId).add(privateRoom);
+    // if (!this.privateRooms.has(userId)) {
+    //   this.privateRooms.set(userId, new Set<string>());
+    // }
+    // this.privateRooms.get(userId).add(privateRoom);
 
-    this.sendChatHistory(client, userId);
+    // this.sendChatHistory(client, userId);
   }
 
   handleDisconnect(client: Socket) {
@@ -64,14 +69,14 @@ export class MessagesGateway {
 
     const savedMessage = await this.messagesService.create(message);
 
-    const privateRoom = `private-${savedMessage.receiverId}`;
+    const privateRoom = `private-${savedMessage.receiver.id}`;
     client
       .to(privateRoom)
-      .emit('chat', { sender: savedMessage.senderId, message });
+      .emit('chat', { sender: savedMessage.sender.id, message });
 
-    client.emit('chat', { sender: savedMessage.senderId, message });
+    client.emit('chat', { sender: savedMessage.sender.id, message });
 
-    client.to(privateRoom).emit('typing', { sender: savedMessage.senderId });
+    client.to(privateRoom).emit('typing', { sender: savedMessage.sender.id });
   }
 
   @SubscribeMessage('history')

@@ -32,9 +32,6 @@ export class User {
   })
   role: Role;
 
-  @Column({ nullable: true })
-  refreshToken: string;
-
   @Column({ default: false })
   isVerified: boolean;
 

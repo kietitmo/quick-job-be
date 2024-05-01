@@ -44,4 +44,8 @@ export class SearchingJobConditionDto {
   @IsString()
   @IsOptional()
   maxSalary: string;
+
+  @IsString()
+  @IsOptional()
+  status: string;
 }
