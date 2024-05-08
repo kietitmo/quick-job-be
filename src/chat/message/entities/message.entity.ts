@@ -1,5 +1,6 @@
+import { Room } from 'src/chat/room/entities/room.entity';
 import { User } from 'src/users/entities/user.entity';
-import { Entity, Column, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, ManyToOne, Column } from 'typeorm';
 
 @Entity('messages')
 export class Message {
@@ -9,8 +10,8 @@ export class Message {
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   sender: User;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  receiver: User;
+  @ManyToOne(() => Room)
+  room: Room;
 
   @Column({ type: 'text' })
   content: string;

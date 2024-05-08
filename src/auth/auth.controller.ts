@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Req,
+  UseGuards,
+  Res,
+} from '@nestjs/common';
+import { Response } from 'express';
+
 import { AuthService } from './auth.service';
 import { Public } from './decorators/IsPublic.decorator';
 import { EmailVerificationDto } from './dto/emailVerification.dto';
@@ -8,6 +18,7 @@ import { PasswordChangingReason } from './enums/PasswordChangingReason.enum';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { EmailChangingDto } from './dto/emailChanging.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -34,10 +45,11 @@ export class AuthController {
   }
 
   @Get('google/redirect')
-  @Public()
   @UseGuards(GoogleAuthGuard)
-  async handleRedirect(@Req() req: any) {
-    return await this.authService.login(req.user);
+  async handleRedirect(@Req() req: any, @Res() res: Response) {
+    const auth = await this.authService.login(req.user);
+    res.cookie('auth', JSON.stringify(auth));
+    return res.redirect('http://localhost:3000/login');
   }
 
   @Post('refresh')
@@ -80,12 +92,32 @@ export class AuthController {
     return await this.authService.verifyEmailAndResetPassword(resetPass);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post('change-password')
   async changePassword(@Req() req: any) {
+    console.log(req);
     return this.authService.SendMailVerifyPassword(
       req.user.email,
       PasswordChangingReason.Proactive,
     );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('change-Email')
+  async changeEmail(@Body() { newEmail }, @Req() req: any) {
+    return await this.authService.changeEmail(newEmail, req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('verify-change-Email')
+  async VerifyChangeEmail(@Body() emailChanging: EmailChangingDto) {
+    return await this.authService.verifyEmailChanging(emailChanging);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('cancel-change-Email')
+  async CancelChangeEmail(@Req() req: any) {
+    return await this.authService.cancelEmailChanging(req.user.id);
   }
 
   @Get('sendmailtest')

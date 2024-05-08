@@ -2,8 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
 import { Job } from './entities/job.entity';
-import { JobImage } from './entities/job_image.entity';
-import { JobVideo } from './entities/job_video.entity';
+// import { JobImage } from './entities/job_image.entity';
+// import { JobVideo } from './entities/job_video.entity';
 import { AddressVietNamService } from 'src/address/vietnamAdress/addressVietnam.service';
 import { JobAddress } from '../address/jobAddress/entities/jobAddress.entity';
 import { Repository } from 'typeorm';
@@ -14,7 +14,7 @@ import { PageMetaDto } from 'src/pagnition/page-meta.dto';
 import { SearchingJobConditionDto } from './dto/search-condition.dto';
 import { UsersService } from 'src/users/users.service';
 import { JobMedia } from './entities/job_media.entity';
-// import { JobMediaType } from './enums/job-media-type.enum';
+import { JobMediaType } from './enums/job-media-type.enum';
 
 @Injectable()
 export class JobsService {
@@ -23,10 +23,10 @@ export class JobsService {
     private readonly jobsRepository: Repository<Job>,
     @InjectRepository(JobMedia)
     private readonly jobMediaRepository: Repository<JobMedia>,
-    @InjectRepository(JobImage)
-    private readonly jobImageRepository: Repository<JobImage>,
-    @InjectRepository(JobVideo)
-    private readonly jobVideoRepository: Repository<JobVideo>,
+    // @InjectRepository(JobImage)
+    // private readonly jobImageRepository: Repository<JobImage>,
+    // @InjectRepository(JobVideo)
+    // private readonly jobVideoRepository: Repository<JobVideo>,
     @InjectRepository(JobAddress)
     private readonly jobAddressRepository: Repository<JobAddress>,
     private readonly vietnamAddressService: AddressVietNamService,
@@ -38,7 +38,6 @@ export class JobsService {
     files?: Array<Express.Multer.File>,
   ): Promise<Job> {
     try {
-      console.log(1);
       const { creatorId, address, ...jobData } = createJobDto;
       const province = await this.vietnamAddressService.getProvince(
         address.province_code,
@@ -68,28 +67,28 @@ export class JobsService {
       await this.jobAddressRepository.save(savedJobAddress);
       if (files) {
         files.forEach(async (file) => {
-          // const jobmedia = new JobMedia();
-          // jobmedia.job = savedJob;
+          const jobmedia = new JobMedia();
+          jobmedia.job = savedJob;
 
           if (file.mimetype.startsWith('image')) {
-            const jobImage = new JobImage();
-            jobImage.url = '/uploads/job/images/' + file.filename;
-            jobImage.job = savedJob;
-            await this.jobImageRepository.save(jobImage);
+            // const jobImage = new JobImage();
+            // jobImage.url = '/uploads/job/images/' + file.filename;
+            // jobImage.job = savedJob;
+            // await this.jobImageRepository.save(jobImage);
 
-            // jobmedia.mediaType = JobMediaType.IMAGE;
-            // jobmedia.url = '/uploads/job/images/' + file.filename;
-            // await this.jobMediaRepository.save(jobmedia);
+            jobmedia.mediaType = JobMediaType.IMAGE;
+            jobmedia.url = '/uploads/job/images/' + file.filename;
+            await this.jobMediaRepository.save(jobmedia);
           }
           if (file.mimetype.startsWith('video')) {
-            const jobVideo = new JobVideo();
-            jobVideo.url = '/uploads/job/videos/' + file.filename;
-            jobVideo.job = savedJob;
-            await this.jobVideoRepository.save(jobVideo);
+            // const jobVideo = new JobVideo();
+            // jobVideo.url = '/uploads/job/videos/' + file.filename;
+            // jobVideo.job = savedJob;
+            // await this.jobVideoRepository.save(jobVideo);
 
-            // jobmedia.mediaType = JobMediaType.IMAGE;
-            // jobmedia.url = '/uploads/job/videos/' + file.filename;
-            // await this.jobMediaRepository.save(jobmedia);
+            jobmedia.mediaType = JobMediaType.IMAGE;
+            jobmedia.url = '/uploads/job/videos/' + file.filename;
+            await this.jobMediaRepository.save(jobmedia);
           }
         });
       }
@@ -112,9 +111,7 @@ export class JobsService {
         .skip((pageOptionsDto.page - 1) * pageOptionsDto.take || 0)
         .take(pageOptionsDto.take)
         .leftJoinAndSelect('job.address', 'address')
-        // .leftJoinAndSelect('job.media', 'media_media')
-        .leftJoinAndSelect('job.images', 'image')
-        .leftJoinAndSelect('job.videos', 'video')
+        .leftJoinAndSelect('job.media', 'media_media')
         .leftJoinAndSelect('job.creator', 'creator')
         .leftJoinAndSelect('job.applications', 'applications')
         .leftJoinAndSelect('address.province', 'province')
@@ -214,9 +211,8 @@ export class JobsService {
         .createQueryBuilder('job')
         .where('job.id = :id', { id: id })
         .leftJoinAndSelect('job.address', 'address')
-        // .leftJoinAndSelect('job.media', 'media_media')
-        .leftJoinAndSelect('job.images', 'images')
-        .leftJoinAndSelect('job.videos', 'videos')
+        .leftJoinAndSelect('job.media', 'media_media')
+
         .leftJoinAndSelect('job.creator', 'creator')
         .leftJoinAndSelect('address.province', 'province')
         .leftJoinAndSelect('address.district', 'district')
@@ -239,6 +235,7 @@ export class JobsService {
         .where('job.id = :id', { id })
         .leftJoinAndSelect('job.address', 'address')
         .leftJoinAndSelect('job.creator', 'creator')
+        .leftJoinAndSelect('job.media', 'media')
         .getOne();
 
       if (!job) {
@@ -285,30 +282,35 @@ export class JobsService {
       }
 
       if (files) {
+        if (job.media) {
+          job.media.forEach((x) => this.removeJobMedia(x.id));
+        }
+
         if (files) {
           files.forEach(async (file) => {
-            // const jobmedia = new JobMedia();
-            // jobmedia.job = job;
+            const jobmedia = new JobMedia();
+            jobmedia.job = job;
 
             if (file.mimetype.startsWith('image')) {
-              const jobImage = new JobImage();
-              jobImage.url = '/uploads/job/images/' + file.filename;
-              jobImage.job = job;
-              await this.jobImageRepository.save(jobImage);
+              // const jobImage = new JobImage();
+              // jobImage.url = '/uploads/job/images/' + file.filename;
+              // jobImage.job = job;
+              // await this.jobImageRepository.save(jobImage);
 
-              // jobmedia.mediaType = JobMediaType.IMAGE;
-              // jobmedia.url = '/uploads/job/images/' + file.filename;
-              // await this.jobMediaRepository.save(jobmedia);
+              jobmedia.mediaType = JobMediaType.IMAGE;
+              jobmedia.url = '/uploads/job/images/' + file.filename;
+              await this.jobMediaRepository.save(jobmedia);
             }
-            if (file.mimetype.startsWith('video')) {
-              const jobVideo = new JobVideo();
-              jobVideo.url = '/uploads/job/videos/' + file.filename;
-              jobVideo.job = job;
-              await this.jobVideoRepository.save(jobVideo);
 
-              // jobmedia.mediaType = JobMediaType.IMAGE;
-              // jobmedia.url = '/uploads/job/videos/' + file.filename;
-              // await this.jobMediaRepository.save(jobmedia);
+            if (file.mimetype.startsWith('video')) {
+              // const jobVideo = new JobVideo();
+              // jobVideo.url = '/uploads/job/videos/' + file.filename;
+              // jobVideo.job = job;
+              // await this.jobVideoRepository.save(jobVideo);
+
+              jobmedia.mediaType = JobMediaType.IMAGE;
+              jobmedia.url = '/uploads/job/videos/' + file.filename;
+              await this.jobMediaRepository.save(jobmedia);
             }
           });
         }
@@ -377,7 +379,7 @@ export class JobsService {
         .createQueryBuilder('job')
         .leftJoinAndSelect('job.address', 'address')
         .leftJoinAndSelect('job.images', 'images')
-        // .leftJoinAndSelect('job.media', 'media_media')
+        .leftJoinAndSelect('job.media', 'job_media')
         .leftJoinAndSelect('job.videos', 'videos')
         .leftJoinAndSelect('job.creator', 'creator')
         .leftJoinAndSelect('address.province', 'province')
@@ -462,18 +464,29 @@ export class JobsService {
       }
 
       files.forEach(async (file) => {
+        const jobmedia = new JobMedia();
+        jobmedia.job = job;
+
         if (file.mimetype.startsWith('image')) {
-          const jobImage = new JobImage();
-          jobImage.url = file.destination + '/' + file.filename;
-          jobImage.job = job;
-          await this.jobImageRepository.save(jobImage);
+          // const jobImage = new JobImage();
+          // jobImage.url = '/uploads/job/images/' + file.filename;
+          // jobImage.job = job;
+          // await this.jobImageRepository.save(jobImage);
+
+          jobmedia.mediaType = JobMediaType.IMAGE;
+          jobmedia.url = '/uploads/job/images/' + file.filename;
+          await this.jobMediaRepository.save(jobmedia);
         }
 
         if (file.mimetype.startsWith('video')) {
-          const jobVideo = new JobVideo();
-          jobVideo.url = file.destination + '/' + file.filename;
-          jobVideo.job = job;
-          await this.jobVideoRepository.save(jobVideo);
+          // const jobVideo = new JobVideo();
+          // jobVideo.url = '/uploads/job/videos/' + file.filename;
+          // jobVideo.job = job;
+          // await this.jobVideoRepository.save(jobVideo);
+
+          jobmedia.mediaType = JobMediaType.IMAGE;
+          jobmedia.url = '/uploads/job/videos/' + file.filename;
+          await this.jobMediaRepository.save(jobmedia);
         }
       });
 
@@ -484,33 +497,48 @@ export class JobsService {
     }
   }
 
-  async removeJobImage(id: string): Promise<void> {
+  // async removeJobImage(id: string): Promise<void> {
+  //   try {
+  //     const job = await this.jobImageRepository.findOneBy({ id });
+
+  //     if (!job) {
+  //       throw new NotFoundException('Job Image not found');
+  //     }
+
+  //     await this.jobImageRepository.delete(id);
+  //   } catch (error) {
+  //     console.error('Error deleting job Image:', error);
+  //     throw new Error('Failed to delete job Image.');
+  //   }
+  // }
+
+  async removeJobMedia(id: string): Promise<void> {
     try {
-      const job = await this.jobImageRepository.findOneBy({ id });
+      const job = await this.jobMediaRepository.findOneBy({ id });
 
       if (!job) {
-        throw new NotFoundException('Job Image not found');
+        throw new NotFoundException('Job media not found');
       }
 
-      await this.jobImageRepository.delete(id);
+      await this.jobMediaRepository.delete(id);
     } catch (error) {
-      console.error('Error deleting job Image:', error);
-      throw new Error('Failed to delete job Image.');
+      console.error('Error deleting job media:', error);
+      throw new Error('Failed to delete job media.');
     }
   }
 
-  async removeJobVideo(id: string): Promise<void> {
-    try {
-      const job = await this.jobVideoRepository.findOneBy({ id });
+  // async removeJobVideo(id: string): Promise<void> {
+  //   try {
+  //     const job = await this.jobVideoRepository.findOneBy({ id });
 
-      if (!job) {
-        throw new NotFoundException('Job Video not found');
-      }
+  //     if (!job) {
+  //       throw new NotFoundException('Job Video not found');
+  //     }
 
-      await this.jobVideoRepository.delete(id);
-    } catch (error) {
-      console.error('Error deleting job Video:', error);
-      throw new Error('Failed to delete job Video.');
-    }
-  }
+  //     await this.jobVideoRepository.delete(id);
+  //   } catch (error) {
+  //     console.error('Error deleting job Video:', error);
+  //     throw new Error('Failed to delete job Video.');
+  //   }
+  // }
 }

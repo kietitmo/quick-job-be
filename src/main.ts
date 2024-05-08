@@ -9,9 +9,14 @@ async function bootstrap() {
   app.setBaseViewsDir(join(__dirname, '..', 'views'));
   app.setViewEngine('pug');
   app.enableCors({
-    allowedHeaders: '*',
     origin: '*',
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'access-control-allow-origin',
+    ],
   });
+
   await app.listen(3333);
 }
 bootstrap();

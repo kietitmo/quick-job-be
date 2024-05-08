@@ -8,12 +8,13 @@ import {
   OneToMany,
   OneToOne,
 } from 'typeorm';
-import { JobImage } from './job_image.entity';
-import { JobVideo } from './job_video.entity';
+// import { JobImage } from './job_image.entity';
+// import { JobVideo } from './job_video.entity';
 import { JobCategory } from '../enums/JobCategory.enum';
 import { JobStatus } from '../enums/JobStatus.enum';
 import { JobAddress } from '../../address/jobAddress/entities/jobAddress.entity';
 import { Application } from 'src/applications/entities/application.entity';
+import { JobMedia } from './job_media.entity';
 // import { JobMedia } from './job_media.entity';
 
 @Entity('jobs')
@@ -58,20 +59,20 @@ export class Job {
   })
   category: JobCategory;
 
-  @OneToMany(() => JobImage, (jobImage) => jobImage.job, {
-    onDelete: 'CASCADE',
-  })
-  images: JobImage[];
-
-  @OneToMany(() => JobVideo, (jobVideo) => jobVideo.job, {
-    onDelete: 'CASCADE',
-  })
-  videos: JobVideo[];
-
-  // @OneToMany(() => JobMedia, (media) => media.job, {
+  // @OneToMany(() => JobImage, (jobImage) => jobImage.job, {
   //   onDelete: 'CASCADE',
   // })
-  // media: JobMedia[];
+  // images: JobImage[];
+
+  // @OneToMany(() => JobVideo, (jobVideo) => jobVideo.job, {
+  //   onDelete: 'CASCADE',
+  // })
+  // videos: JobVideo[];
+
+  @OneToMany(() => JobMedia, (media) => media.job, {
+    onDelete: 'CASCADE',
+  })
+  media: JobMedia[];
 
   @Column({ nullable: true })
   rating: number;

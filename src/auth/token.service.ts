@@ -84,7 +84,7 @@ export class TokenService {
       const token = await this.findOneByUserId(userId);
 
       if (!token) {
-        throw new NotFoundException('Token not found');
+        return this.createToken(userId, newToken);
       }
 
       token.refreshToken = newToken;

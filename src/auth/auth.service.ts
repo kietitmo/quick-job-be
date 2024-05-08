@@ -22,6 +22,7 @@ import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { UpdateUserDto } from 'src/users/dto/update-user.dto';
 import { Token } from './entities/token.entity';
 import { TokenService } from './token.service';
+import { EmailChangingDto } from './dto/emailChanging.dto';
 
 @Injectable()
 export class AuthService {
@@ -84,7 +85,6 @@ export class AuthService {
       });
 
       this.emailVerificationRepository.save(emailVerification);
-      console.log(1);
       this.mailerService.sendMail({
         to: createUserDto.email,
         from: process.env.MAIL_FROM,
@@ -104,6 +104,95 @@ export class AuthService {
 
       return user;
     } catch (error) {
+      throw error;
+    }
+  }
+
+  async changeEmail(newEmail: string, userId: string) {
+    try {
+      const randomBytes = crypto.randomBytes(6);
+      const token = randomBytes.toString('hex').slice(0, 6);
+      const user = await this.usersService.findOne(userId);
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      const emailVerification = this.emailVerificationRepository.create({
+        user: user,
+        emailToken: token,
+      });
+
+      this.emailVerificationRepository.save(emailVerification);
+
+      this.mailerService.sendMail({
+        to: newEmail,
+        from: process.env.MAIL_FROM,
+        subject: 'Changing email in Quick Job ✔',
+        template: './auth/emailChanging',
+        context: {
+          token: token,
+        },
+      });
+    } catch (error) {
+      console.error('Email changing error:', error);
+      throw error;
+    }
+  }
+  async cancelEmailChanging(userId: string) {
+    try {
+      const emailVerification = await this.emailVerificationRepository
+        .createQueryBuilder('emailVeri')
+        .leftJoinAndSelect('emailVeri.user', 'user')
+        .where('user.id = :userId', { userId: userId })
+        .getOne();
+
+      if (!emailVerification) {
+        throw new NotFoundException('Email Verification not found');
+      }
+
+      this.emailVerificationRepository.remove(emailVerification);
+      return true;
+    } catch (error) {
+      console.error('Email verification error:', error);
+      throw error;
+    }
+  }
+
+  async verifyEmailChanging(emailChangingDto: EmailChangingDto) {
+    try {
+      const emailVerification = await this.emailVerificationRepository.findOne({
+        where: {
+          emailToken: emailChangingDto.emailToken,
+        },
+      });
+
+      if (!emailVerification) {
+        throw new NotFoundException('Email Verification not found');
+      }
+
+      const user = await this.usersService.findOneByEmail(
+        emailChangingDto.currentEmail,
+      );
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      await this.usersService.updateUser(user.id, {
+        email: emailChangingDto.newEmail,
+      });
+      await this.emailVerificationRepository.remove(emailVerification);
+
+      this.mailerService.sendMail({
+        to: emailChangingDto.newEmail,
+        from: process.env.MAIL_FROM,
+        subject: 'Verification successful in Quick Job ✔',
+        template: './auth/emailVerified',
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Email verification error:', error);
       throw error;
     }
   }
@@ -149,18 +238,6 @@ export class AuthService {
     }
   }
 
-  async updateRefreshToken(userId: string, refreshToken: string) {
-    try {
-      await this.usersService.updateUser(userId, {
-        refreshToken: refreshToken,
-      });
-      await this.tokenService.updateToken(userId, refreshToken);
-    } catch (error) {
-      console.error('Refresh token update error:', error);
-      throw error;
-    }
-  }
-
   async logout(userId: string) {
     try {
       await this.tokenService.updateToken(userId, '-');
@@ -194,7 +271,6 @@ export class AuthService {
         throw new ForbiddenException('Access Denied');
       }
       const tokens = await this.generateTokens(user);
-      await this.updateRefreshToken(user.id, tokens.refreshToken);
       await this.tokenService.updateToken(user.id, tokens.refreshToken);
       console.log(' done verify refresh tokens ');
       return {
@@ -366,7 +442,7 @@ export class AuthService {
         return result;
       } else {
         const new_user = await this.usersService.createUser({
-          username: profile.username,
+          username: profile.emails[0].value.split('@')[0],
           email: profile.emails[0].value,
           password: null,
           fullName: profile.name.familyName + ' ' + profile.name.givenName,
@@ -392,7 +468,6 @@ export class AuthService {
       const tokens = await this.generateTokens(user);
       await this.tokenService.updateToken(user.id, tokens.refreshToken);
 
-      await this.updateRefreshToken(user.id, tokens.refreshToken);
       const data = { user, tokens };
       return data;
     } catch (error) {

@@ -20,7 +20,7 @@ export class Application {
   @JoinColumn({ name: 'applicantId' })
   applicant: User;
 
-  @ManyToOne(() => Job)
+  @ManyToOne(() => Job, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'jobId' })
   job: Job;
 

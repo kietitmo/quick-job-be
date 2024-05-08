@@ -10,7 +10,6 @@ import { AuthModule } from './auth/auth.module';
 import { JobExecutorModule } from './job-user/job-executor.module';
 import { APP_FILTER, APP_PIPE } from '@nestjs/core';
 import { AllExceptionsFilter } from './errorFilter/error.filter';
-import { MessagesModule } from './messages/messages.module';
 import { TypeOrmExceptionFilter } from './errorFilter/typeORMError.filter';
 
 @Module({
@@ -34,7 +33,6 @@ import { TypeOrmExceptionFilter } from './errorFilter/typeORMError.filter';
       synchronize: true,
     }),
     JobExecutorModule,
-    MessagesModule,
   ],
   controllers: [AppController],
   providers: [

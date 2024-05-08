@@ -71,6 +71,7 @@ export class ApplicationsService {
         .createQueryBuilder('app')
         .leftJoinAndSelect('app.applicant', 'user')
         .leftJoinAndSelect('app.job', 'job')
+        .leftJoinAndSelect('job.creator', 'creator')
         .orderBy('app.createdAt', pageOptionsDto.order)
         .skip((pageOptionsDto.page - 1) * pageOptionsDto.take || 0)
         .take(pageOptionsDto.take);

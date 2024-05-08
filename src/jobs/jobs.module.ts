@@ -3,8 +3,8 @@ import { JobsService } from './jobs.service';
 import { JobsController } from './jobs.controller';
 import { Job } from './entities/job.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { JobImage } from './entities/job_image.entity';
-import { JobVideo } from './entities/job_video.entity';
+// import { JobImage } from './entities/job_image.entity';
+// import { JobVideo } from './entities/job_video.entity';
 import { JobAddressModule } from 'src/address/jobAddress/jobAddress.module';
 import { AddressVietnamModule } from 'src/address/vietnamAdress/addressVietnam.module';
 import { District } from 'src/address/vietnamAdress/entities/district.entity';
@@ -20,8 +20,8 @@ import { JobMedia } from './entities/job_media.entity';
   imports: [
     TypeOrmModule.forFeature([
       Job,
-      JobImage,
-      JobVideo,
+      // JobImage,
+      // JobVideo,
       JobMedia,
       Province,
       District,
