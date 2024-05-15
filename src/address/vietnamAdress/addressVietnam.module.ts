@@ -4,11 +4,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Province } from './entities/province.entity';
 import { District } from './entities/district.entity';
 import { Ward } from './entities/ward.entity';
-import { Unit } from './entities/unit.entity';
-import { Region } from './entities/region.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Province, District, Ward, Unit, Region])],
+  imports: [TypeOrmModule.forFeature([Province, District, Ward])],
   providers: [AddressVietNamService],
   exports: [TypeOrmModule, AddressVietNamService],
 })

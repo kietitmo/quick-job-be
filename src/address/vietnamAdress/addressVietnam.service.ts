@@ -4,8 +4,6 @@ import { Province } from './entities/province.entity';
 import { Repository } from 'typeorm';
 import { District } from './entities/district.entity';
 import { Ward } from './entities/ward.entity';
-import { Unit } from './entities/unit.entity';
-import { Region } from './entities/region.entity';
 
 @Injectable()
 export class AddressVietNamService {
@@ -18,12 +16,6 @@ export class AddressVietNamService {
 
     @InjectRepository(Ward)
     private readonly wardRepository: Repository<Ward>,
-
-    @InjectRepository(Unit)
-    private readonly unitRepository: Repository<Unit>,
-
-    @InjectRepository(Region)
-    private readonly regionRepository: Repository<Region>,
   ) {}
 
   async getAllProvinces(): Promise<Province[]> {

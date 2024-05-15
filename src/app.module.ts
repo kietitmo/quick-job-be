@@ -28,7 +28,6 @@ import { TypeOrmExceptionFilter } from './errorFilter/typeORMError.filter';
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      // entities: [User, Job, JobImage, JobVideo, PrivateChat, Review, Application, JobAddress],
       autoLoadEntities: true,
       synchronize: true,
     }),
