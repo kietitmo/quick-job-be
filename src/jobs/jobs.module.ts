@@ -9,8 +9,8 @@ import { JobAddressModule } from 'src/address/jobAddress/jobAddress.module';
 import { AddressVietnamModule } from 'src/address/vietnamAdress/addressVietnam.module';
 import { District } from 'src/address/vietnamAdress/entities/district.entity';
 import { Province } from 'src/address/vietnamAdress/entities/province.entity';
-import { Region } from 'src/address/vietnamAdress/entities/region.entity';
-import { Unit } from 'src/address/vietnamAdress/entities/unit.entity';
+// import { Region } from 'src/address/vietnamAdress/entities/region.entity';
+// import { Unit } from 'src/address/vietnamAdress/entities/unit.entity';
 import { Ward } from 'src/address/vietnamAdress/entities/ward.entity';
 import { JobAddress } from 'src/address/jobAddress/entities/jobAddress.entity';
 import { UsersModule } from 'src/users/users.module';
@@ -26,8 +26,8 @@ import { JobMedia } from './entities/job_media.entity';
       Province,
       District,
       Ward,
-      Unit,
-      Region,
+      // Unit,
+      // Region,
       JobAddress,
     ]),
     AddressVietnamModule,

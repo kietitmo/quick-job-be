@@ -1,5 +1,5 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
-import { Unit } from './unit.entity';
+// import { Unit } from './unit.entity';
 import { Province } from './province.entity';
 
 @Entity('districts')
@@ -27,8 +27,8 @@ export class District {
   @JoinColumn({ name: 'province_code' })
   province_code: string;
 
-  @ManyToOne(() => Unit)
-  @Column()
-  @JoinColumn({ name: 'administrative_unit_id' })
-  administrative_unit_id: number;
+  // @ManyToOne(() => Unit)
+  // @Column()
+  // @JoinColumn({ name: 'administrative_unit_id' })
+  // administrative_unit_id: number;
 }

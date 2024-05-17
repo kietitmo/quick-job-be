@@ -1,0 +1,41 @@
+version: '3'
+services:
+  nestjs-api:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '3333:3333'
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=postgres
+      - JWT_SECRET_ACCESS_TOKEN=JWT_SECRET_ACCESS_TOKEN
+      - JWT_SECRET_REFRESH_TOKEN=JWT_SECRET_REFRESH_TOKEN
+      - MAIL_HOST=smtp.gmail.com
+      - MAIL_USER=sirtuankiet@gmail.com
+      - MAIL_PASSWORD=dcwr lnfk srjb smgs
+      - MAIL_FROM=${MAIL_USER}
+      - MAIL_TRANSPORT=smtp://${MAIL_USER}:${MAIL_PASSWORD}@${MAIL_HOST}
+      - baseUrl='http://localhost:3000/'
+      - verifyEmailRoute='auth/verifyEmail'
+      - baseAvatarUrl='http://localhost:3000/uploads/user/avatars'
+      - basejobMediaUrl='http://localhost:3000/uploads/job'
+      - baseReviewMediaUrl='http://localhost:3000/uploads/review'
+    volumes:
+      - ./:/usr/src/app/
+      - /usr/src/app/node_modules/bcrypt/
+    depends_on:
+      - db
+  db:
+    image: postgres:15
+    ports:
+      - '5433:5432'
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    volumes:
+      - ./data/init.sql:/docker-entrypoint-initdb.d/init.sql
