@@ -40,5 +40,5 @@ This project involves developing a scalable backend for a job search platform th
 ---
 ## **Database schema**  
 
-![db schema](quick-job-be\DB_Schema.jpg)
+![db schema](./quick-job-be/DB_Schema.jpg)
 
